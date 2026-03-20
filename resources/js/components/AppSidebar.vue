@@ -39,6 +39,11 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Notifications',
+        href: '/app/notifications',
+        icon: LayoutGrid,
+    },
+    {
         title: 'Stores',
         href: '/app/stores/switch',
         icon: LayoutGrid,

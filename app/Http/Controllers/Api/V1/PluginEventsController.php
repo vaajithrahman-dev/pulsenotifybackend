@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\Store;
+use App\Notifications\EventSummaryNotification;
+use App\Services\EventSummaryService;
 use Illuminate\Http\Request;
 
 class PluginEventsController extends Controller
@@ -39,6 +41,10 @@ class PluginEventsController extends Controller
 
         $payloadJson = json_encode($data, JSON_UNESCAPED_SLASHES);
 
+        $summarizer = app(EventSummaryService::class);
+        $summary = $summarizer->summarize((string) $eventType, $data);
+        $orderId = $summarizer->extractOrderId($data);
+
         $event = new Event();
         $event->store_id = $store->id;
         $event->event_id = (string) $eventId;
@@ -46,13 +52,28 @@ class PluginEventsController extends Controller
         $event->occurred_at = $occurredAt;
         $event->received_at = now();
         $event->payload_json = $payloadJson;
-        $event->summary = null;
+        $event->summary = $summary;
 
         // Optional feed-only marker
         $event->is_feed_only = (bool)($data['feed_only'] ?? false)
             || (($data['delivery_mode'] ?? '') === 'feed_only');
 
         $event->save();
+
+        // Notify store users for actionable events
+        if (!$event->is_feed_only) {
+            $store->users()->chunk(50, function ($users) use ($store, $event, $summary, $orderId) {
+                foreach ($users as $user) {
+                    $user->notify(new EventSummaryNotification(
+                        storeId: $store->id,
+                        eventType: $event->event_type,
+                        summary: $summary,
+                        eventId: $event->event_id,
+                        orderId: $orderId,
+                    ));
+                }
+            });
+        }
 
         return response()->json([
             'ok' => true,

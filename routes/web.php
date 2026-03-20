@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Store;
 use App\Models\User;
 use App\MagicLinkController;
+use App\NotificationsController;
 use App\QrLoginController;
 use App\OrderActionsController;
 use App\OrdersController;
@@ -139,6 +140,7 @@ Route::middleware([EnsureStoreMembership::class])->group(function () {
     Route::get('/app/coupons', [CouponsController::class, 'index']);
     Route::post('/app/orders/{orderId}/status', [OrderActionsController::class, 'updateStatus']);
     Route::post('/app/orders/{orderId}/notes', [OrderActionsController::class, 'addNote']);
+    Route::get('/app/notifications', [NotificationsController::class, 'index']);
 
 
     Route::get('/app/stores/add', [StoresController::class, 'create']);
