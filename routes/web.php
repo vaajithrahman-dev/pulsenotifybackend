@@ -3,6 +3,7 @@
 use App\CouponsController;
 use App\EventsController;
 use App\Http\Middleware\EnsureStoreMembership;
+use App\MetricsController;
 use App\Models\Order;
 use App\Models\Store;
 use App\Models\User;
@@ -138,6 +139,7 @@ Route::middleware([EnsureStoreMembership::class])->group(function () {
     Route::get('/app/orders/feed', [OrdersController::class, 'feed']);
     Route::get('/app/events', [EventsController::class, 'index']);
     Route::get('/app/coupons', [CouponsController::class, 'index']);
+    Route::get('/app/metrics', [MetricsController::class, 'index']);
     Route::post('/app/orders/{orderId}/status', [OrderActionsController::class, 'updateStatus']);
     Route::post('/app/orders/{orderId}/notes', [OrderActionsController::class, 'addNote']);
     Route::get('/app/notifications', [NotificationsController::class, 'index']);

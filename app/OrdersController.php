@@ -15,12 +15,34 @@ class OrdersController extends Controller
     {
         $activeStorePk = (int) $request->attributes->get('active_store_id');
 
-        $orders = Order::query()
-            ->where('store_id', $activeStorePk)
-            ->orderByDesc('modified_at_gmt')
+        $status = $request->query('status');
+        $email = $request->query('email');
+        $start = $request->query('start');
+        $end = $request->query('end');
+        $perPage = (int) $request->query('per_page', 20);
+        if ($perPage < 5) $perPage = 5;
+        if ($perPage > 100) $perPage = 100;
+
+        $q = Order::query()->where('store_id', $activeStorePk);
+
+        if ($status && is_string($status)) {
+            $q->where('status', $status);
+        }
+
+        if ($email && is_string($email)) {
+            $q->where('billing_email', 'like', '%' . $email . '%');
+        }
+
+        if ($start) {
+            $q->whereDate('modified_at_gmt', '>=', $start);
+        }
+        if ($end) {
+            $q->whereDate('modified_at_gmt', '<=', $end);
+        }
+
+        $orders = $q->orderByDesc('modified_at_gmt')
             ->orderByDesc('id')
-            ->limit(50)
-            ->get([
+            ->paginate($perPage, [
                 'id',
                 'store_id',
                 'order_id',
@@ -34,10 +56,17 @@ class OrdersController extends Controller
                 'coupon_codes',
                 'payment_method_title',
                 'modified_at_gmt',
-            ]);
+            ])->withQueryString();
 
         return Inertia::render('orders/Index', [
             'orders' => $orders,
+            'filters' => [
+                'status' => $status,
+                'email' => $email,
+                'start' => $start,
+                'end' => $end,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 
