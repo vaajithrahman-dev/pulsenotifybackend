@@ -43,6 +43,11 @@ class OrderActionsController extends Controller
     public function updateStatus(Request $request, int $orderId)
     {
         $activeStorePk = (int) $request->attributes->get('active_store_id');
+        $role = (string) $request->attributes->get('active_store_role', '');
+
+        if ($role !== 'owner') {
+            abort(403, 'Only store owners can update order status.');
+        }
 
         $validated = $request->validate([
             'status' => ['required', 'string', 'max:32'],
@@ -101,11 +106,21 @@ class OrderActionsController extends Controller
     public function addNote(Request $request, int $orderId)
     {
         $activeStorePk = (int) $request->attributes->get('active_store_id');
+        $role = (string) $request->attributes->get('active_store_role', '');
 
         $validated = $request->validate([
             'note' => ['required', 'string', 'min:1', 'max:2000'],
             'customer_note' => ['nullable', 'boolean'],
         ]);
+
+        $customerNote = (bool)($validated['customer_note'] ?? false);
+
+        if ($customerNote && $role !== 'owner') {
+            abort(403, 'Only store owners can send customer-facing notes.');
+        }
+        if (!in_array($role, ['owner', 'staff'], true)) {
+            abort(403, 'You are not allowed to add notes for this store.');
+        }
 
         // Ensure order exists locally
         Order::query()
@@ -116,7 +131,6 @@ class OrderActionsController extends Controller
         $store = Store::findOrFail($activeStorePk);
 
         $noteText = trim($validated['note']);
-        $customerNote = (bool)($validated['customer_note'] ?? false);
 
         $proxy = app(WooProxyService::class);
 

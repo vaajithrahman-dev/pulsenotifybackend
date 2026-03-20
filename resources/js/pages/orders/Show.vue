@@ -71,6 +71,15 @@ const props = defineProps<{
   }>
 }>()
 
+const storeRole = computed(() => {
+  const tenant = (usePage().props as any).tenant
+  return tenant?.active_store_role || null
+})
+
+const canUpdateStatus = computed(() => storeRole.value === 'owner')
+const canAddNote = computed(() => storeRole.value === 'owner' || storeRole.value === 'staff')
+const canSendCustomerNote = computed(() => storeRole.value === 'owner')
+
 
 const page = usePage()
 const flashSuccess = computed(() => (page.props as any).flash?.success ?? null)
@@ -135,11 +144,14 @@ const noteForm = useForm<{ note: string; customer_note: boolean }>({
 
       <button
         style="margin-left:8px;"
-        :disabled="statusForm.processing"
+        :disabled="statusForm.processing || !canUpdateStatus"
         @click.prevent="statusForm.post(`/app/orders/${order.order_id}/status`, { preserveScroll: true })"
       >
         Update
       </button>
+      <div v-if="!canUpdateStatus" style="margin-top:8px;color:#999;font-size:12px;">
+        Only owners can update order status.
+      </div>
 
       <div v-if="statusForm.errors.status" style="margin-top:8px;color:#d22;">
         {{ statusForm.errors.status }}
@@ -152,17 +164,20 @@ const noteForm = useForm<{ note: string; customer_note: boolean }>({
       <textarea v-model="noteForm.note" rows="3" style="width:100%;"></textarea>
 
       <label style="display:block;margin-top:8px;">
-        <input type="checkbox" v-model="noteForm.customer_note" />
+        <input type="checkbox" v-model="noteForm.customer_note" :disabled="!canSendCustomerNote" />
         Customer note
       </label>
 
       <button
         style="margin-top:8px;"
-        :disabled="noteForm.processing"
+        :disabled="noteForm.processing || !canAddNote"
         @click.prevent="noteForm.post(`/app/orders/${order.order_id}/notes`, { preserveScroll: true, onSuccess: () => { noteForm.note = '' } })"
       >
         Add Note
       </button>
+      <div v-if="!canAddNote" style="margin-top:8px;color:#999;font-size:12px;">
+        You do not have permission to add notes for this store.
+      </div>
 
       <div v-if="noteForm.errors.note" style="margin-top:8px;color:#d22;">
         {{ noteForm.errors.note }}

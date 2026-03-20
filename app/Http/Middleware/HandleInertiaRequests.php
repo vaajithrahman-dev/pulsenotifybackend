@@ -63,6 +63,7 @@ class HandleInertiaRequests extends Middleware
                 return [
                     'active_store_id' => (int) $request->session()->get('active_store_id', 0),
                     'stores' => $stores,
+                    'active_store_role' => $stores->firstWhere('id', (int) $request->session()->get('active_store_id', 0))?->pivot?->role ?? null,
                 ];
             },
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

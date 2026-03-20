@@ -29,7 +29,7 @@ class EnsureStoreMembership
 
         $hasMembership = $user->memberships()
             ->where('store_id', $activeStorePk)
-            ->exists();
+            ->first();
 
         if (!$hasMembership) {
             abort(403, 'You do not have access to the active store.');
@@ -37,6 +37,7 @@ class EnsureStoreMembership
 
         // Make it available everywhere via request attribute
         $request->attributes->set('active_store_id', $activeStorePk);
+        $request->attributes->set('active_store_role', (string) ($hasMembership->role ?? ''));
 
         return $next($request);
     }
