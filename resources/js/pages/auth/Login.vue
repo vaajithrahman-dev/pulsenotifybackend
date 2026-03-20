@@ -105,6 +105,10 @@ defineProps<{
                 Don't have an account?
                 <TextLink :href="register()" :tabindex="5">Sign up</TextLink>
             </div>
+            <div class="text-center text-sm text-muted-foreground">
+                Prefer passwordless?
+                <TextLink href="/magic-link" :tabindex="6">Email me a magic link</TextLink>
+            </div>
         </Form>
     </AuthBase>
 </template>

@@ -47,6 +47,11 @@ const mainNavItems: NavItem[] = [
         title: 'Add Store',
         href: '/app/stores/add',
         icon: LayoutGrid,
+    },
+    {
+        title: 'QR Login',
+        href: '/qr-login',
+        icon: LayoutGrid,
     }
     
 ];

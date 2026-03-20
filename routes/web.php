@@ -6,6 +6,8 @@ use App\Http\Middleware\EnsureStoreMembership;
 use App\Models\Order;
 use App\Models\Store;
 use App\Models\User;
+use App\MagicLinkController;
+use App\QrLoginController;
 use App\OrderActionsController;
 use App\OrdersController;
 use App\StoresController;
@@ -13,12 +15,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
+Route::middleware('guest')->group(function () {
+    Route::get('/magic-link', [MagicLinkController::class, 'show'])->name('magic-link.show');
+    Route::post('/magic-link', [MagicLinkController::class, 'send'])->name('magic-link.send');
+});
+
+Route::get('/magic-link/{token}', [MagicLinkController::class, 'consume'])->name('magic-link.consume');
+Route::get('/qr-login/{token}', [QrLoginController::class, 'consume'])->name('qr-login.consume');
+
 Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+});
+
+Route::middleware(['auth', EnsureStoreMembership::class])->group(function () {
+    Route::get('/qr-login', [QrLoginController::class, 'show'])->name('qr-login.show');
 });
 
 
