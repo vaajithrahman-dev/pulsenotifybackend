@@ -4,6 +4,7 @@ use App\CouponsController;
 use App\EventsController;
 use App\Http\Middleware\EnsureStoreMembership;
 use App\MetricsController;
+use App\AuditLogController;
 use App\Models\Order;
 use App\Models\Store;
 use App\Models\User;
@@ -54,6 +55,20 @@ Route::get('/debug/login', function () {
     return redirect('/debug/active-store');
 });
 
+
+Route::get('/setup/run', function () {
+    abort_unless(env('APP_ALLOW_WEB_SETUP'), 404);
+    abort_if(app()->environment('production'), 403);
+    abort_unless(hash_equals(env('APP_INSTALL_TOKEN'), request('token','')), 403);
+
+    \Artisan::call('migrate', ['--force' => true]);
+    \Artisan::call('db:seed', ['--force' => true]);
+
+    return response()->json([
+        'ok' => true,
+        'migrate_output' => trim(\Artisan::output()),
+    ]);
+});
 
 // Route::post('/debug/switch-store', function (Request $request) {
 //     $request->validate([
@@ -140,6 +155,8 @@ Route::middleware([EnsureStoreMembership::class])->group(function () {
     Route::get('/app/events', [EventsController::class, 'index']);
     Route::get('/app/coupons', [CouponsController::class, 'index']);
     Route::get('/app/metrics', [MetricsController::class, 'index']);
+    Route::get('/app/audit-logs', [AuditLogController::class, 'index']);
+    Route::get('/app/audit-logs/export', [AuditLogController::class, 'exportCsv']);
     Route::post('/app/orders/{orderId}/status', [OrderActionsController::class, 'updateStatus']);
     Route::post('/app/orders/{orderId}/notes', [OrderActionsController::class, 'addNote']);
     Route::get('/app/notifications', [NotificationsController::class, 'index']);

@@ -39,6 +39,11 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Audit Logs',
+        href: '/app/audit-logs',
+        icon: LayoutGrid,
+    },
+    {
         title: 'Events',
         href: '/app/events',
         icon: LayoutGrid,
