@@ -24,6 +24,11 @@ class EnsureStoreMembership
         $activeStorePk = (int) $request->session()->get('active_store_id');
 
         if ($activeStorePk <= 0) {
+            // If user has no stores yet, guide them to add one instead of hard 403
+            $hasAny = $user->memberships()->exists();
+            if (!$hasAny) {
+                return redirect('/app/stores/add')->with('error', 'Add your first store to continue.');
+            }
             abort(403, 'No active store selected.');
         }
 

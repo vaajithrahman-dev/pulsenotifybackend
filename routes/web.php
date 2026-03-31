@@ -3,6 +3,7 @@
 use App\CouponsController;
 use App\EventsController;
 use App\Http\Middleware\EnsureStoreMembership;
+use App\Http\Middleware\SetActiveStore;
 use App\MetricsController;
 use App\AuditLogController;
 use App\Models\Order;
@@ -15,6 +16,8 @@ use App\OrderActionsController;
 use App\OrdersController;
 use App\StoresController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -61,12 +64,18 @@ Route::get('/setup/run', function () {
     abort_if(app()->environment('production'), 403);
     abort_unless(hash_equals(env('APP_INSTALL_TOKEN'), request('token','')), 403);
 
-    \Artisan::call('migrate', ['--force' => true]);
-    \Artisan::call('db:seed', ['--force' => true]);
+    if (!Schema::hasTable('sessions')) {
+        Artisan::call('session:table');
+    }
+
+    Artisan::call('config:clear');
+    Artisan::call('migrate', ['--force' => true]);
+    Artisan::call('db:seed', ['--force' => true]);
+    Artisan::call('config:clear');
 
     return response()->json([
         'ok' => true,
-        'migrate_output' => trim(\Artisan::output()),
+        'output' => trim(Artisan::output()),
     ]);
 });
 
@@ -136,10 +145,15 @@ Route::get('/debug/orders-count', function () {
 
 // Route::post('/app/stores/switch', [StoresController::class, 'switch']);
 
-Route::get('/app/stores/switch', [StoresController::class, 'switchPage']);
-Route::post('/app/stores/switch', [StoresController::class, 'switchStore']);
+// Store selection/addition (auth only; no active-store required)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/app/stores/switch', [StoresController::class, 'switchPage']);
+    Route::post('/app/stores/switch', [StoresController::class, 'switchStore']);
+    Route::get('/app/stores/add', [StoresController::class, 'create']);
+    Route::post('/app/stores/add', [StoresController::class, 'store']);
+});
 
-Route::middleware([EnsureStoreMembership::class])->group(function () {
+Route::middleware([SetActiveStore::class, EnsureStoreMembership::class])->group(function () {
     Route::get('/app', function (Request $request) {
         return response()->json([
             'ok' => true,
@@ -160,10 +174,6 @@ Route::middleware([EnsureStoreMembership::class])->group(function () {
     Route::post('/app/orders/{orderId}/status', [OrderActionsController::class, 'updateStatus']);
     Route::post('/app/orders/{orderId}/notes', [OrderActionsController::class, 'addNote']);
     Route::get('/app/notifications', [NotificationsController::class, 'index']);
-
-
-    Route::get('/app/stores/add', [StoresController::class, 'create']);
-    Route::post('/app/stores/add', [StoresController::class, 'store']);
 });
 
 
