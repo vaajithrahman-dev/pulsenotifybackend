@@ -11,7 +11,7 @@ type StoreRow = {
   store_name: string | null
 }
 
-const props = defineProps<{
+defineProps<{
   stores: StoreRow[]
   active_store_id: number
 }>()

@@ -15,7 +15,7 @@ type NotificationItem = {
   created_at: string | null
 }
 
-const props = defineProps<{
+defineProps<{
   notifications: NotificationItem[]
   active_store_id: number
 }>()
